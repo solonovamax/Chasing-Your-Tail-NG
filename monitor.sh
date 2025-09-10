@@ -1,24 +1,25 @@
-#!/bin/bash
-while true;
-do
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # no color
-numprocesses=$(ps aux | grep -i 'kismet' | wc -l)
-#echo $numprocesses
-if [[ $numprocesses > 2 ]] ; then 
-		echo -e "${GREEN}kismet up${NC}"
-	else
-		echo -e "${RED}kismet down${NC}"
-fi
+#!/usr/bin/env bash
 
-string=$(iwconfig wlan0 & iwconfig wlan1 & iwconfig wlan1mon) 
-if [[ $string == *"Mode:Monitor"* ]]; then
-	echo -e "${GREEN}Monitor Mode Detected${NC}"
-	echo
-else
-	echo -e "${RED}Monitor Mode Not Detected${NC}"
-	echo
-fi 
-sleep 10;
+GREEN=$'\e[0;32m'
+RED=$'\e[0;31m'
+RESET=$'\e[0m'
+
+while true; do
+    if [[ $(pgrep -cif 'kismet') -gt 1 ]]; then
+        echo "${GREEN}kismet up${RESET}"
+    else
+        echo "${RED}kismet down${RESET}"
+    fi
+
+    # wtf is this doing?
+    iwconfig_output=$(iwconfig wlan0 & iwconfig wlan1 & iwconfig wlan1mon)
+
+    if [[ $iwconfig_output == *"Mode:Monitor"* ]]; then
+        echo "${GREEN}Monitor Mode Detected${RESET}"
+        echo
+    else
+        echo "${RED}Monitor Mode Not Detected${RESET}"
+    fi
+
+    sleep 10
 done

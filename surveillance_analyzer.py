@@ -34,7 +34,7 @@ class SurveillanceAnalyzer:
     def __init__(self, config_path: str = 'config.json'):
         # Load secure configuration
         os.environ['CYT_TEST_MODE'] = 'true'  # For non-interactive mode
-        self.config, self.credential_manager = load_config(config_path)
+        self.config = load_config(config_path)
 
         # Initialize components
         self.detector = SurveillanceDetector(self.config)
@@ -171,7 +171,7 @@ class SurveillanceAnalyzer:
             # Load devices from all databases, associating them with GPS locations
             primary_location = "Location_1"  # Use the first/primary location
             for db_file in db_files_to_process:
-                db_count = self._load_appearances_with_gps(db_file, primary_location)
+                db_count = self.__load_appearances_with_gps(db_file, primary_location)
                 print(f"   📁 {os.path.basename(db_file)}: {db_count} device appearances")
                 total_count += db_count
         else:
@@ -327,7 +327,7 @@ class SurveillanceAnalyzer:
 
         print(f"📊 Results exported to JSON: {output_file}")
 
-    def _load_appearances_with_gps(self, db_path: str, location_id: str) -> int:
+    def __load_appearances_with_gps(self, db_path: str, location_id: str) -> int:
         """Load device appearances and register them with GPS tracker"""
         import sqlite3
         import json
@@ -397,6 +397,7 @@ class SurveillanceAnalyzer:
 def main():
     """Main CLI interface"""
     parser = argparse.ArgumentParser(description='CYT Surveillance Analysis Tool')
+    # TODO 2025-09-10 (solonovamax): Get rid of demo bs
     parser.add_argument('--demo', action='store_true',
                         help='Run demo analysis with simulated GPS data')
     parser.add_argument('--kismet-db', type=str,

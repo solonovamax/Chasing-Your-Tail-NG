@@ -4,8 +4,8 @@
         "log_dir": "logs",
         "kismet_logs": "/home/matt/kismet_logs/*.kismet",
         "ignore_lists": {
-            "mac": "mac_list.py",
-            "ssid": "ssid_list.py"
+            "mac": "ignore_lists/mac_list.py",
+            "ssid": "ignore_lists/ssid_list.py"
         }
     },
     "api_keys": {

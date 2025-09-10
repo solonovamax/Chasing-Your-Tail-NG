@@ -62,19 +62,19 @@ class GPSTracker:
         self.locations.append(location)
         
         # Generate location ID (for clustering nearby locations)
-        location_id = self._get_location_cluster_id(location)
+        location_id = self.__get_location_cluster_id(location)
         
         # Update current location and session
-        self._update_current_session(location, location_id)
+        self.__update_current_session(location, location_id)
         
         logger.info(f"GPS reading added: {latitude:.6f}, {longitude:.6f} -> {location_id}")
         return location_id
     
-    def _get_location_cluster_id(self, location: GPSLocation) -> str:
+    def __get_location_cluster_id(self, location: GPSLocation) -> str:
         """Get cluster ID for location (groups nearby locations)"""
         # Check if this location is close to any existing session
         for session in self.location_sessions:
-            distance = self._calculate_distance(location, session.location)
+            distance = self.__calculate_distance(location, session.location)
             if distance <= self.location_threshold:
                 return session.session_id
         
@@ -95,7 +95,7 @@ class GPSTracker:
             
         return location_id
     
-    def _update_current_session(self, location: GPSLocation, location_id: str) -> None:
+    def __update_current_session(self, location: GPSLocation, location_id: str) -> None:
         """Update current location session"""
         now = time.time()
         
@@ -123,7 +123,7 @@ class GPSTracker:
         self.current_location = current_session
         logger.debug(f"Updated session: {location_id}")
     
-    def _calculate_distance(self, loc1: GPSLocation, loc2: GPSLocation) -> float:
+    def __calculate_distance(self, loc1: GPSLocation, loc2: GPSLocation) -> float:
         """Calculate distance between two GPS locations in meters"""
         # Haversine formula
         R = 6371000  # Earth's radius in meters
@@ -188,7 +188,7 @@ class KMLExporter:
     
     def __init__(self):
         self.kml_template = '''<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+<kml xmlns="https://www.opengis.net/kml/2.2" xmlns:gx="https://www.google.com/kml/ext/2.2">
 <Document>
     <name>🛡️ CYT Advanced Surveillance Detection Analysis</name>
     <description><![CDATA[
@@ -205,7 +205,7 @@ class KMLExporter:
         <IconStyle>
             <color>ff0000ff</color>
             <Icon>
-                <href>http://maps.google.com/mapfiles/kml/shapes/target.png</href>
+                <href>https://maps.google.com/mapfiles/kml/shapes/target.png</href>
             </Icon>
             <scale>2.0</scale>
             <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
@@ -224,7 +224,7 @@ class KMLExporter:
         <IconStyle>
             <color>ff0080ff</color>
             <Icon>
-                <href>http://maps.google.com/mapfiles/kml/shapes/warning.png</href>
+                <href>https://maps.google.com/mapfiles/kml/shapes/warning.png</href>
             </Icon>
             <scale>1.7</scale>
             <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
@@ -243,7 +243,7 @@ class KMLExporter:
         <IconStyle>
             <color>ff00ffff</color>
             <Icon>
-                <href>http://maps.google.com/mapfiles/kml/shapes/info-i.png</href>
+                <href>https://maps.google.com/mapfiles/kml/shapes/info-i.png</href>
             </Icon>
             <scale>1.4</scale>
             <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
@@ -263,7 +263,7 @@ class KMLExporter:
         <IconStyle>
             <color>ff00ff00</color>
             <Icon>
-                <href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href>
+                <href>https://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href>
             </Icon>
             <scale>1.8</scale>
             <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
@@ -282,7 +282,7 @@ class KMLExporter:
         <IconStyle>
             <color>ff0099ff</color>
             <Icon>
-                <href>http://maps.google.com/mapfiles/kml/shapes/placemark_square.png</href>
+                <href>https://maps.google.com/mapfiles/kml/shapes/placemark_square.png</href>
             </Icon>
             <scale>1.5</scale>
             <hotSpot x="0.5" y="0.5" xunits="fraction" yunits="fraction"/>
@@ -357,7 +357,7 @@ class KMLExporter:
         
         if not gps_tracker.location_sessions:
             logger.warning("No GPS data available for KML generation")
-            return self._generate_empty_kml(output_file)
+            return self.__generate_empty_kml(output_file)
         
         content_parts = []
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -417,9 +417,9 @@ class KMLExporter:
             </table>
             <br/>
             <h4>📱 Device Intelligence Summary:</h4>
-            {self._format_enhanced_device_list(session.devices_seen, suspicious_devices_here)}
+            {self.__format_enhanced_device_list(session.devices_seen, suspicious_devices_here)}
             
-            {self._format_location_persistence_analysis(suspicious_devices_here) if suspicious_devices_here else '<p><b>✅ No persistent devices detected at this location</b></p>'}
+            {self.__format_location_persistence_analysis(suspicious_devices_here) if suspicious_devices_here else '<p><b>✅ No persistent devices detected at this location</b></p>'}
             ]]>
         </description>
         <styleUrl>{style_url}</styleUrl>
@@ -448,7 +448,7 @@ class KMLExporter:
                 content_parts.append("<Folder>")
                 content_parts.append("<name>🚨 VERY HIGH PERSISTENCE DEVICES</name>")
                 content_parts.append("<description>Devices with highest activity patterns</description>")
-                self._add_device_tracking_folder(content_parts, critical_devices, gps_tracker, "CRITICAL")
+                self.__add_device_tracking_folder(content_parts, critical_devices, gps_tracker, "CRITICAL")
                 content_parts.append("</Folder>")
             
             # High persistence devices folder  
@@ -456,7 +456,7 @@ class KMLExporter:
                 content_parts.append("<Folder>")
                 content_parts.append("<name>⚠️ HIGH PERSISTENCE DEVICES</name>")
                 content_parts.append("<description>Devices with notable activity patterns</description>")
-                self._add_device_tracking_folder(content_parts, high_devices, gps_tracker, "HIGH")
+                self.__add_device_tracking_folder(content_parts, high_devices, gps_tracker, "HIGH")
                 content_parts.append("</Folder>")
             
             # Medium persistence devices folder
@@ -464,7 +464,7 @@ class KMLExporter:
                 content_parts.append("<Folder>")
                 content_parts.append("<name>🟡 MODERATE PERSISTENCE DEVICES</name>")
                 content_parts.append("<description>Devices with some activity patterns</description>")
-                self._add_device_tracking_folder(content_parts, medium_devices, gps_tracker, "MEDIUM")
+                self.__add_device_tracking_folder(content_parts, medium_devices, gps_tracker, "MEDIUM")
                 content_parts.append("</Folder>")
             
             # Surveillance pattern analysis overlay
@@ -473,16 +473,16 @@ class KMLExporter:
             content_parts.append("<description>Advanced surveillance pattern visualization</description>")
             
             # Add heat map style analysis
-            self._add_surveillance_heatmap(content_parts, surveillance_devices, gps_tracker)
+            self.__add_surveillance_heatmap(content_parts, surveillance_devices, gps_tracker)
             
             # Add temporal analysis tracks
-            self._add_temporal_analysis_tracks(content_parts, surveillance_devices, gps_tracker)
+            self.__add_temporal_analysis_tracks(content_parts, surveillance_devices, gps_tracker)
             
             content_parts.append("</Folder>")
         
         # Generate enhanced final KML with updated styles and timestamp
         full_content = "\n".join(content_parts)
-        enhanced_kml_template = self._get_enhanced_kml_template()
+        enhanced_kml_template = self.__get_enhanced_kml_template()
         kml_output = enhanced_kml_template.format(
             content=full_content,
             timestamp=timestamp,
@@ -498,7 +498,7 @@ class KMLExporter:
         logger.info(f"📊 Includes {len(gps_tracker.location_sessions)} locations, {len(surveillance_devices) if surveillance_devices else 0} surveillance devices")
         return kml_output
     
-    def _format_device_list(self, devices: List[str]) -> str:
+    def __format_device_list(self, devices: List[str]) -> str:
         """Format device list for KML description"""
         if not devices:
             return "None"
@@ -512,14 +512,14 @@ class KMLExporter:
             
         return formatted
     
-    def _format_threat_reasons(self, reasons: List[str]) -> str:
+    def __format_threat_reasons(self, reasons: List[str]) -> str:
         """Format threat reasons for KML description"""
         if not reasons:
             return "No specific threats identified"
         
         return "<br/>".join(f"• {reason}" for reason in reasons)
     
-    def _format_enhanced_device_list(self, all_devices: List[str], suspicious_devices: List) -> str:
+    def __format_enhanced_device_list(self, all_devices: List[str], suspicious_devices: List) -> str:
         """Format enhanced device list with threat intelligence"""
         if not all_devices:
             return "<p>No devices detected</p>"
@@ -543,7 +543,7 @@ class KMLExporter:
         html += "</ul>"
         return html
     
-    def _format_location_persistence_analysis(self, suspicious_devices: List) -> str:
+    def __format_location_persistence_analysis(self, suspicious_devices: List) -> str:
         """Format location-specific persistence analysis"""
         if not suspicious_devices:
             return ""
@@ -560,7 +560,7 @@ class KMLExporter:
         html += "</ul>"
         return html
     
-    def _add_device_tracking_folder(self, content_parts: List[str], devices: List, 
+    def __add_device_tracking_folder(self, content_parts: List[str], devices: List, 
                                   gps_tracker: GPSTracker, threat_level: str) -> None:
         """Add device tracking visualization for a specific threat level"""
         
@@ -664,7 +664,7 @@ class KMLExporter:
     </Placemark>'''
                         content_parts.append(device_marker)
     
-    def _add_surveillance_heatmap(self, content_parts: List[str], surveillance_devices: List, 
+    def __add_surveillance_heatmap(self, content_parts: List[str], surveillance_devices: List, 
                                 gps_tracker: GPSTracker) -> None:
         """Add surveillance intensity heatmap visualization"""
         
@@ -712,7 +712,7 @@ class KMLExporter:
             <outerBoundaryIs>
                 <LinearRing>
                     <coordinates>
-                        {self._generate_circle_coordinates(session.location.longitude, session.location.latitude, radius)}
+                        {self.__generate_circle_coordinates(session.location.longitude, session.location.latitude, radius)}
                     </coordinates>
                 </LinearRing>
             </outerBoundaryIs>
@@ -720,7 +720,7 @@ class KMLExporter:
     </Placemark>'''
                 content_parts.append(heatmap_circle)
     
-    def _add_temporal_analysis_tracks(self, content_parts: List[str], surveillance_devices: List,
+    def __add_temporal_analysis_tracks(self, content_parts: List[str], surveillance_devices: List,
                                     gps_tracker: GPSTracker) -> None:
         """Add temporal surveillance pattern visualization"""  
         
@@ -797,7 +797,7 @@ class KMLExporter:
     </Placemark>'''
             content_parts.append(analysis)
     
-    def _generate_circle_coordinates(self, center_lon: float, center_lat: float, radius_meters: float) -> str:
+    def __generate_circle_coordinates(self, center_lon: float, center_lat: float, radius_meters: float) -> str:
         """Generate circle coordinates for KML polygon"""
         import math
         
@@ -813,10 +813,10 @@ class KMLExporter:
         
         return " ".join(coordinates)
     
-    def _get_enhanced_kml_template(self) -> str:
+    def __get_enhanced_kml_template(self) -> str:
         """Get spectacular KML template with advanced styling and metadata"""
         return '''<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+<kml xmlns="https://www.opengis.net/kml/2.2" xmlns:gx="https://www.google.com/kml/ext/2.2">
 <Document>
     <name>🛡️ CYT Advanced Surveillance Detection Analysis</name>
     <description><![CDATA[
@@ -841,7 +841,7 @@ class KMLExporter:
     <Style id="locationStyle">
         <IconStyle>
             <color>ff00ff00</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon>
             <scale>1.2</scale>
         </IconStyle>
     </Style>
@@ -849,7 +849,7 @@ class KMLExporter:
     <Style id="criticalLocationStyle">
         <IconStyle>
             <color>ff0000ff</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/forbidden.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/forbidden.png</href></Icon>
             <scale>1.8</scale>
         </IconStyle>
     </Style>
@@ -857,7 +857,7 @@ class KMLExporter:
     <Style id="highThreatLocationStyle">
         <IconStyle>
             <color>ff0080ff</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/caution.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/caution.png</href></Icon>
             <scale>1.5</scale>
         </IconStyle>
     </Style>
@@ -865,7 +865,7 @@ class KMLExporter:
     <Style id="mediumThreatLocationStyle">
         <IconStyle>
             <color>ff00ffff</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/triangle.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/triangle.png</href></Icon>
             <scale>1.3</scale>
         </IconStyle>
     </Style>
@@ -903,7 +903,7 @@ class KMLExporter:
     <Style id="criticalDeviceStyle">
         <IconStyle>
             <color>ff0000ff</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/target.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/target.png</href></Icon>
             <scale>2.0</scale>
         </IconStyle>
     </Style>
@@ -911,7 +911,7 @@ class KMLExporter:
     <Style id="highDeviceStyle">
         <IconStyle>
             <color>ff0080ff</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/cross-hairs.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/cross-hairs.png</href></Icon>
             <scale>1.7</scale>
         </IconStyle>
     </Style>
@@ -919,7 +919,7 @@ class KMLExporter:
     <Style id="mediumDeviceStyle">
         <IconStyle>
             <color>ff00ffff</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/open-diamond.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/open-diamond.png</href></Icon>
             <scale>1.4</scale>
         </IconStyle>
     </Style>
@@ -927,7 +927,7 @@ class KMLExporter:
     <Style id="suspiciousDeviceStyle">
         <IconStyle>
             <color>ff0000ff</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/target.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/target.png</href></Icon>
             <scale>1.5</scale>
         </IconStyle>
     </Style>
@@ -948,7 +948,7 @@ class KMLExporter:
     <Style id="temporalPatternStyle">
         <IconStyle>
             <color>ff00ff00</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/clock.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/clock.png</href></Icon>
             <scale>1.5</scale>
         </IconStyle>
     </Style>
@@ -956,7 +956,7 @@ class KMLExporter:
     <Style id="offHoursPatternStyle">
         <IconStyle>
             <color>ff800080</color>
-            <Icon><href>http://maps.google.com/mapfiles/kml/shapes/moon.png</href></Icon>
+            <Icon><href>https://maps.google.com/mapfiles/kml/shapes/moon.png</href></Icon>
             <scale>1.5</scale>
         </IconStyle>
     </Style>
@@ -965,7 +965,7 @@ class KMLExporter:
 </Document>
 </kml>'''
     
-    def _generate_empty_kml(self, output_file: str) -> str:
+    def __generate_empty_kml(self, output_file: str) -> str:
         """Generate empty KML when no GPS data is available"""
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
@@ -985,7 +985,7 @@ class KMLExporter:
         </Point>
     </Placemark>'''
         
-        kml_output = self._get_enhanced_kml_template().format(
+        kml_output = self.__get_enhanced_kml_template().format(
             content=empty_content,
             timestamp=timestamp,
             total_locations=0,

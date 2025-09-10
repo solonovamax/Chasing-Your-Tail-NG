@@ -6,87 +6,69 @@
 import glob
 import logging
 import os
-import pathlib
 import signal
 import sys
 import time
+from pathlib import Path
 
-from secure_database import SecureKismetDB
-from secure_ignore_loader import load_ignore_lists
+from secure_database import KismetDB
+from ignore_list_loader import load_ignore_lists
 from secure_main_logic import SecureCYTMonitor
 from utils import load_config
 
-# Configure logging
+config = load_config('config.json')
+
+logs_dir = Path(Path(config['paths']['log_dir'])) / time.strftime("%m-%d-%Y-%H-%M-%S")
+logs_dir.mkdir(parents=True, exist_ok=True)
+
+log_file = logs_dir / 'cyt.log'
+
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    format='%(asctime)s [%(levelname)s] %(name): %(message)s',
     handlers=[
-        logging.FileHandler('cyt_security.log'),
-        logging.StreamHandler()
+        logging.FileHandler(logs_dir / 'cyt.log'),
+        logging.StreamHandler(sys.stdout)
     ]
 )
 
-# Load configuration with secure credential handling
-config, credential_manager = load_config('config.json')
-logging.info("Configuration loaded with secure credential management")
+logger = logging.getLogger(__name__)
 
-### Check for/make subdirectories for logs, ignore lists etc.
-cyt_sub = pathlib.Path(config['paths']['log_dir'])
-cyt_sub.mkdir(parents=True, exist_ok=True)
+event_log_file = logs_dir / 'probes' / f'events.jsonl'
 
-print('Current Time: ' + time.strftime('%Y-%m-%d %H:%M:%S'))
-
-### Create Log file
-
-log_file_name = f'./logs/cyt_log_{time.strftime("%m%d%Y_%H%M%S")}'
-
-cyt_log = open(log_file_name, "w", buffering=1)
+cyt_log = open(log_file, "w", buffering=1)
+event_log = open(event_log_file, buffering=1)
 
 #######Load ignore lists securely - NO MORE exec()!
 
-# Load ignore lists using secure loader
 ignore_list, probe_ignore_list = load_ignore_lists(config)
 
-# Log results
-print(f'{len(ignore_list)} MACs added to ignore list.')
-print(f'{len(probe_ignore_list)} Probed SSIDs added to ignore list.')
-cyt_log.write(f'{len(ignore_list)} MACs added to ignore list.\n')
-cyt_log.write(f'{len(probe_ignore_list)} Probed SSIDs added to ignore list.\n')
+logging.info(f"Loaded {len(ignore_list)} MAC addresses and {len(probe_ignore_list)} SSIDs")
 
-# Log security info
-logging.info(f"Securely loaded {len(ignore_list)} MAC addresses and {len(probe_ignore_list)} SSIDs")
-
-### Set Initial Variables - SECURE VERSION
 db_path = config['paths']['kismet_logs']
 
-######Find Newest DB file - SECURE
 try:
     list_of_files = glob.glob(db_path)
     if not list_of_files:
         raise FileNotFoundError(f"No Kismet database files found at: {db_path}")
 
     latest_file = max(list_of_files, key=os.path.getctime)
-    print(f"Pulling data from: {latest_file}")
-    cyt_log.write(f"Pulling data from: {latest_file}\n")
     logging.info(f"Using Kismet database: {latest_file}")
 
     # Initialize secure monitor
-    secure_monitor = SecureCYTMonitor(config, ignore_list, probe_ignore_list, cyt_log)
+    secure_monitor = SecureCYTMonitor(config, ignore_list, probe_ignore_list, cyt_log, event_log)
 
     # Test database connection and initialize tracking lists
-    with SecureKismetDB(latest_file) as db:
+    with KismetDB(latest_file) as db:
         if not db.validate_connection():
             raise RuntimeError("Database validation failed")
 
-        print("Initializing secure tracking lists...")
+        logger.info("Initializing secure tracking lists...")
         secure_monitor.initialize_tracking_lists(db)
         print("Initialization complete!")
 
 except Exception as e:
-    error_msg = f"Fatal error during initialization: {e}"
-    print(error_msg)
-    cyt_log.write(f"{error_msg}\n")
-    logging.error(error_msg)
+    logging.error("Fatal error during initialization", exc_info=e)
     sys.exit(1)
 
 
@@ -117,7 +99,7 @@ while True:
 
     try:
         # Process current activity with secure database operations
-        with SecureKismetDB(latest_file) as db:
+        with KismetDB(latest_file) as db:
             secure_monitor.process_current_activity(db)
 
             # Rotate tracking lists every N cycles (default 5 = 5 minutes)

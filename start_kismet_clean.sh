@@ -6,7 +6,7 @@ cd /home/matt/Desktop/cytng
 echo "$(date): Starting Kismet without any cleanup..."
 
 # Just start Kismet directly - no process killing!
-sudo /usr/local/bin/kismet -c wlan1 --daemonize
+sudo kismet -c wlan1 --daemonize
 
 sleep 3
 

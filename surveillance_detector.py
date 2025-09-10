@@ -76,7 +76,7 @@ class SurveillanceDetector:
             if len(appearances) < self.thresholds['min_appearances']:
                 continue
                 
-            persistence_score, reasons = self._calculate_persistence_score(appearances)
+            persistence_score, reasons = self.__calculate_persistence_score(appearances)
             
             if persistence_score > self.thresholds['min_persistence_score']:  # Persistence threshold
                 suspicious_device = SuspiciousDevice(
@@ -95,7 +95,7 @@ class SurveillanceDetector:
         suspicious_devices.sort(key=lambda d: d.persistence_score, reverse=True)
         return suspicious_devices
     
-    def _calculate_persistence_score(self, appearances: List[DeviceAppearance]) -> Tuple[float, List[str]]:
+    def __calculate_persistence_score(self, appearances: List[DeviceAppearance]) -> Tuple[float, List[str]]:
         """Simple persistence scoring: just detect devices that appear frequently over time"""
         reasons = []
         
@@ -133,7 +133,7 @@ class SurveillanceDetector:
     
     
     
-    def _generate_analysis_statistics(self) -> Dict:
+    def __generate_analysis_statistics(self) -> Dict:
         """Generate comprehensive statistics for the analysis"""
         if not self.appearances:
             return {
@@ -223,7 +223,7 @@ class SurveillanceDetector:
             'detection_accuracy': 0.95  # Based on algorithm validation
         }
     
-    def _format_detailed_device_analysis(self, device: SuspiciousDevice, persistence_level: str) -> str:
+    def __format_detailed_device_analysis(self, device: SuspiciousDevice, persistence_level: str) -> str:
         """Format detailed analysis for a suspicious device with clear explanations"""
         lines = []
         
@@ -307,7 +307,7 @@ class SurveillanceDetector:
         
         return '\n'.join(lines)
     
-    def _analyze_temporal_patterns(self, suspicious_devices: List[SuspiciousDevice]) -> List[str]:
+    def __analyze_temporal_patterns(self, suspicious_devices: List[SuspiciousDevice]) -> List[str]:
         """Analyze temporal patterns across suspicious devices"""
         patterns = []
         
@@ -380,7 +380,7 @@ class SurveillanceDetector:
         
         return patterns
     
-    def _analyze_geographic_patterns(self, suspicious_devices: List[SuspiciousDevice]) -> List[str]:
+    def __analyze_geographic_patterns(self, suspicious_devices: List[SuspiciousDevice]) -> List[str]:
         """Analyze geographic tracking patterns"""
         patterns = []
         
@@ -425,7 +425,7 @@ class SurveillanceDetector:
         
         return patterns
     
-    def _analyze_device_correlations(self, suspicious_devices: List[SuspiciousDevice]) -> List[str]:
+    def __analyze_device_correlations(self, suspicious_devices: List[SuspiciousDevice]) -> List[str]:
         """Analyze correlations between suspicious devices"""
         correlations = []
         
@@ -459,7 +459,7 @@ class SurveillanceDetector:
         suspicious_devices = self.analyze_surveillance_patterns()
         
         # Generate comprehensive statistics
-        stats = self._generate_analysis_statistics()
+        stats = self.__generate_analysis_statistics()
         
         report = []
         
@@ -594,21 +594,21 @@ class SurveillanceDetector:
                 report.append("*These devices appeared very frequently in your wireless environment*")
                 report.append("")
                 for device in critical_persistent_devices:
-                    report.append(self._format_detailed_device_analysis(device, "CRITICAL"))
+                    report.append(self.__format_detailed_device_analysis(device, "CRITICAL"))
             
             if high_persistences:
                 report.append("### 📈 HIGH PERSISTENCE DEVICES (Score 0.8-0.9)")
                 report.append("*These devices appeared frequently and might be worth noting*")
                 report.append("")
                 for device in high_persistences:
-                    report.append(self._format_detailed_device_analysis(device, "HIGH"))
+                    report.append(self.__format_detailed_device_analysis(device, "HIGH"))
             
             if medium_persistent_devices:
                 report.append("### 📋 MODERATE PERSISTENCE DEVICES (Score 0.6-0.8)")
                 report.append("*These devices showed some repeated wireless activity*")
                 report.append("")
                 for device in medium_persistent_devices:
-                    report.append(self._format_detailed_device_analysis(device, "MEDIUM"))
+                    report.append(self.__format_detailed_device_analysis(device, "MEDIUM"))
             
             # Behavioral pattern analysis
             report.append("## 🔍 BEHAVIORAL PATTERN ANALYSIS")
@@ -616,21 +616,21 @@ class SurveillanceDetector:
             
             # Temporal analysis
             report.append("### ⏰ Temporal Patterns")
-            temporal_patterns = self._analyze_temporal_patterns(suspicious_devices)
+            temporal_patterns = self.__analyze_temporal_patterns(suspicious_devices)
             for pattern in temporal_patterns:
                 report.append(f"- {pattern}")
             report.append("")
             
             # Geographic analysis
             report.append("### 🗺️ Geographic Tracking Patterns")
-            geo_patterns = self._analyze_geographic_patterns(suspicious_devices)
+            geo_patterns = self.__analyze_geographic_patterns(suspicious_devices)
             for pattern in geo_patterns:
                 report.append(f"- {pattern}")
             report.append("")
             
             # Device correlation analysis
             report.append("### 🔗 Device Correlation Matrix")
-            correlations = self._analyze_device_correlations(suspicious_devices)
+            correlations = self.__analyze_device_correlations(suspicious_devices)
             if correlations:
                 report.append("*Devices that appear together may indicate coordinated surveillance*")
                 report.append("")
