@@ -1,44 +1,43 @@
 #!/usr/bin/env python3
-
-import json
-import pathlib
+import argparse
 import glob
+import pathlib
 import re
 from datetime import datetime
-import requests
-import sqlite3
-import argparse
 
-# Load config with secure credentials
-from secure_credentials import secure_config_loader
-config, credential_manager = secure_config_loader('config.json')
+import requests
+
+from utils import load_config
+
+config = load_config('config.json')
+
 
 class ProbeAnalyzer:
     def __init__(self, log_dir=None, local_only=True, days_back=14):
         self.log_dir = log_dir or pathlib.Path(config['paths']['log_dir'])
         self.days_back = days_back
         # Get WiGLE API key from secure storage
-        self.wigle_api_key = credential_manager.get_wigle_token()
+        self.wigle_api_key = config.get('api_keys').get('wigle')
         if not self.wigle_api_key and not local_only:
             print("⚠️  No WiGLE API token found in secure storage. Use --local for offline analysis.")
         self.probes = {}  # Dictionary to store probe requests {ssid: [timestamps]}
         self.local_only = local_only  # New flag for local search only
-        
+
     def parse_log_file(self, log_file):
         """Parse a single CYT log file for probe requests"""
         probe_pattern = re.compile(r'Found a probe!: (.*?)\n')
         # Update timestamp pattern to match log format
         timestamp_pattern = re.compile(r'Current Time: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
-        
+
         with open(log_file, 'r') as f:
             content = f.read()
-            
+
         # Debug: Print all probes found in this file
         probes_found = probe_pattern.findall(content)
         print(f"\nFound {len(probes_found)} probes in {log_file}:")
         for probe in probes_found:
             print(f"- {probe}")
-        
+
         for probe in probe_pattern.finditer(content):
             ssid = probe.group(1).strip()
             # Find nearest timestamp before this probe
@@ -59,17 +58,17 @@ class ProbeAnalyzer:
                     if ssid not in self.probes:
                         self.probes[ssid] = []
                     self.probes[ssid].append(timestamp)
-    
+
     def parse_all_logs(self):
         """Parse log files in the log directory (filtered by days_back)"""
         from datetime import datetime, timedelta
-        
+
         cutoff_date = datetime.now() - timedelta(days=self.days_back)
         all_log_files = list(self.log_dir.glob('cyt_log_*'))
         filtered_files = []
-        
+
         print(f"\nFiltering logs to past {self.days_back} days (since {cutoff_date.strftime('%Y-%m-%d')})")
-        
+
         for log_file in all_log_files:
             try:
                 # Extract date from filename: cyt_log_MMDDYY_HHMMSS
@@ -81,7 +80,7 @@ class ProbeAnalyzer:
                         month = int(date_str[:2])
                         day = int(date_str[2:4])
                         year = 2000 + int(date_str[4:6])  # Convert YY to 20YY
-                        
+
                         file_date = datetime(year, month, day)
                         if file_date >= cutoff_date:
                             filtered_files.append(log_file)
@@ -91,27 +90,27 @@ class ProbeAnalyzer:
                 # If we can't parse the date, include the file to be safe
                 print(f"- Including file with unparseable date: {log_file.name}")
                 filtered_files.append(log_file)
-        
+
         print(f"\nScanning {len(filtered_files)} recent log files (skipped {len(all_log_files) - len(filtered_files)} old files):")
-        
+
         log_count = 0
         for log_file in filtered_files:
             print(f"- Reading {log_file.name}")
             self.parse_log_file(log_file)
             log_count += 1
-        
+
         print(f"\nProcessed {log_count} log files from past {self.days_back} days")
-            
+
     def query_wigle(self, ssid):
         """Query WiGLE for information about an SSID"""
         if not self.wigle_api_key:
             return {"error": "WiGLE API key not configured"}
-            
+
         print(f"\nQuerying WiGLE for SSID: {ssid}")
         headers = {
             'Authorization': f'Basic {self.wigle_api_key}'
         }
-        
+
         # Only include bounding box if local_only is True and coordinates are set
         params = {'ssid': ssid}
         if self.local_only:
@@ -124,7 +123,7 @@ class ProbeAnalyzer:
                     'longrange2': search_config['lon_max'],
                 })
                 print("Using local search area")
-        
+
         try:
             response = requests.get(
                 'https://api.wigle.net/api/v2/network/search',
@@ -134,7 +133,7 @@ class ProbeAnalyzer:
             return response.json()
         except Exception as e:
             return {"error": str(e)}
-            
+
     def analyze_probes(self):
         """Analyze collected probe requests"""
         results = []
@@ -152,12 +151,13 @@ class ProbeAnalyzer:
             results.append(result)
         return results
 
+
 def main():
     """
     Probe Request Analyzer for Chasing Your Tail
-    
+
     This tool analyzes probe requests from CYT log files and can query WiGLE for SSID locations.
-    
+
     Before running:
     1. Make sure you have CYT log files in your logs directory
     2. To use WiGLE lookups:
@@ -165,7 +165,7 @@ def main():
        - Add it to config.json under api_keys->wigle
        - Set your search area in config.json under search
     """
-    
+
     if len(glob.glob(str(pathlib.Path(config['paths']['log_dir']) / 'cyt_log_*'))) == 0:
         print("\nError: No log files found!")
         print(f"Please check the logs directory: {config['paths']['log_dir']}")
@@ -178,16 +178,16 @@ def main():
         print("To enable WiGLE lookups:")
         print("1. Get an API key from wigle.net")
         print("2. Add it to config.json under api_keys->wigle")
-    
+
     parser = argparse.ArgumentParser(description='Analyze probe requests and query WiGLE')
-    parser.add_argument('--wigle', action='store_true', 
-                      help='Enable WiGLE API queries (disabled by default to protect API keys)')
-    parser.add_argument('--local', action='store_true', 
-                      help='[DEPRECATED] Use --wigle to enable API calls')
+    parser.add_argument('--wigle', action='store_true',
+                        help='Enable WiGLE API queries (disabled by default to protect API keys)')
+    parser.add_argument('--local', action='store_true',
+                        help='[DEPRECATED] Use --wigle to enable API calls')
     parser.add_argument('--days', type=int, default=14,
-                      help='Number of days back to analyze (default: 14, use 0 for all logs)')
+                        help='Number of days back to analyze (default: 14, use 0 for all logs)')
     parser.add_argument('--all-logs', action='store_true',
-                      help='Analyze all log files (equivalent to --days 0)')
+                        help='Analyze all log files (equivalent to --days 0)')
     args = parser.parse_args()
 
     # Handle days filtering
@@ -198,36 +198,36 @@ def main():
         print(f"📅 Filtering to logs from past {days_back} days")
     else:
         print("📁 Analyzing ALL log files")
-        
+
     # Default to local_only=True unless --wigle is specified
     use_wigle = args.wigle or args.local  # Keep --local for backwards compatibility
     analyzer = ProbeAnalyzer(local_only=not use_wigle, days_back=days_back)
-    
+
     if use_wigle:
         print("🌐 WiGLE API queries ENABLED - this will consume API credits!")
     else:
         print("🔒 Local analysis only (use --wigle to enable API queries)")
     analyzer.parse_all_logs()
     results = analyzer.analyze_probes()
-    
+
     if not results:
         print("\nNo probe requests found in logs!")
         print("Make sure Chasing Your Tail is running and detecting probes.")
         return
-    
+
     # Print analysis results
     print(f"\nFound {len(results)} unique SSIDs in probe requests:")
     print("-" * 50)
-    
+
     # Sort results by count (most frequent first)
     results.sort(key=lambda x: x['count'], reverse=True)
-    
+
     for result in results:
         print(f"\nSSID: {result['ssid']}")
         print(f"Times seen: {result['count']}")
         print(f"First seen: {result['first_seen']}")
         print(f"Last seen: {result['last_seen']}")
-        
+
         # Calculate time span
         first = datetime.strptime(result['first_seen'], '%m-%d-%y %H:%M:%S')
         last = datetime.strptime(result['last_seen'], '%m-%d-%y %H:%M:%S')
@@ -235,7 +235,7 @@ def main():
         if duration.total_seconds() > 0:
             print(f"Time span: {duration}")
             print(f"Average frequency: {result['count'] / duration.total_seconds():.2f} probes/second")
-        
+
         if result.get('wigle_data'):
             if 'error' in result['wigle_data']:
                 if result['wigle_data']['error'] != "WiGLE API key not configured":
@@ -250,5 +250,6 @@ def main():
                         print(f"- Lat: {loc.get('trilat')}, Lon: {loc.get('trilong')}")
                         print(f"  Last seen: {loc.get('lastupdt')}")
 
+
 if __name__ == "__main__":
-    main() 
+    main()
